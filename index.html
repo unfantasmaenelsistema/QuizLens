@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src https://generativelanguage.googleapis.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>QuizLens</title>
+<meta name="description" content="Haz una foto a una pregunta tipo test y obtén la respuesta correcta con Gemini. Tu clave y tu historial se quedan en tu navegador.">
+<meta name="theme-color" content="#0b0f17">
+<link rel="icon" type="image/png" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --bg:#f4f6fb; --panel:#ffffff; --panel2:#eef1f7; --text:#121826; --muted:#5b6475; --line:#d9dee8;
+  --acc:#00a37a; --acc-ink:#ffffff; --ok:#0e9f6e; --warn:#c27803; --bad:#d23c3c; --shadow:0 6px 24px rgba(16,24,40,.08);
+}
+html[data-theme="dark"]{
+  --bg:#0b0f17; --panel:#121826; --panel2:#182032; --text:#e7ecf5; --muted:#93a0b8; --line:#253047;
+  --acc:#2ee6a6; --acc-ink:#04140e; --ok:#34d399; --warn:#fbbf24; --bad:#f87171; --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--acc)}
+button,select,input{font:inherit;color:inherit}
+.wrap{width:100%;max-width:760px;margin:0 auto;padding:0 16px}
+header{border-bottom:1px solid var(--line);background:var(--panel)}
+header .wrap{display:flex;align-items:center;gap:12px;min-height:60px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);margin-right:auto}
+.brand img{width:36px;height:36px}
+.brand b{font-size:1.15rem;letter-spacing:.2px}
+.brand small{display:block;color:var(--muted);font-size:.75rem;line-height:1.1}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text)}
+.btn:hover{border-color:var(--acc)}
+.btn.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+.btn.small{padding:6px 10px;font-size:.9rem}
+.btn:disabled{opacity:.5;cursor:default}
+main{flex:1;padding:20px 0 32px}
+.drop{border:2px dashed var(--line);border-radius:16px;background:var(--panel);padding:28px 16px;text-align:center;box-shadow:var(--shadow);transition:border-color .15s}
+.drop.over{border-color:var(--acc)}
+.drop h1{font-size:1.25rem;margin:0 0 6px}
+.drop p{margin:0 0 16px;color:var(--muted)}
+.drop .acciones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.aviso{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-size:.92rem}
+.aviso.err{border-color:var(--bad)}
+.card{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.estado{display:flex;align-items:center;gap:12px}
+.spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:g 0.8s linear infinite;flex:none}
+@keyframes g{to{transform:rotate(360deg)}}
+.vista{display:flex;gap:10px;margin-top:12px}
+.vista img{max-height:120px;max-width:48%;border-radius:8px;border:1px solid var(--line);object-fit:contain;background:#fff}
+.resp{padding:14px 0;border-top:1px solid var(--line)}
+.resp:first-of-type{border-top:0;padding-top:4px}
+.resp .num{color:var(--muted);font-size:.85rem;margin-bottom:2px}
+.resp .letra{font-size:2.2rem;font-weight:800;line-height:1.1;color:var(--acc)}
+.resp .texto{font-family:ui-monospace,Consolas,"Cascadia Mono",monospace;font-size:1rem;margin-top:6px;padding:10px 12px;border-radius:10px;background:var(--panel2);border-left:4px solid var(--acc);overflow-wrap:anywhere}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid currentColor}
+.badge.segura{color:var(--ok)} .badge.revisada{color:var(--ok)} .badge.dudosa{color:var(--warn)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;color:var(--muted);font-size:.85rem;margin-bottom:8px}
+.alt{margin-top:8px;color:var(--warn);font-size:.9rem}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--muted);font-size:.9rem}
+details ol{margin:8px 0 0;padding-left:22px}
+details li{font-family:ui-monospace,Consolas,monospace;font-size:.88rem;margin:2px 0;overflow-wrap:anywhere}
+details li.ok{color:var(--acc);font-weight:700}
+.enun{font-size:.92rem;margin:8px 0 0;overflow-wrap:anywhere}
+h2{font-size:1rem;margin:28px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hist{display:grid;gap:8px}
+.hist button{display:flex;gap:10px;align-items:center;text-align:left;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;cursor:pointer}
+.hist button:hover{border-color:var(--acc)}
+.hist img{width:64px;height:48px;object-fit:cover;border-radius:6px;background:#fff;flex:none}
+.hist .r{font-weight:700;color:var(--acc)}
+.hist .t{color:var(--muted);font-size:.8rem}
+.hist .x{flex:1;min-width:0}
+.hist .x span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vacio{color:var(--muted);font-size:.9rem}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--text);padding:0;width:min(520px,calc(100vw - 32px));box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+dialog form{padding:18px}
+dialog h3{margin:0 0 12px}
+label{display:block;font-size:.9rem;margin:12px 0 4px;color:var(--muted)}
+.fila{display:flex;gap:8px}
+.fila input{flex:1;min-width:0}
+input[type=password],input[type=text],select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%}
+.nota{font-size:.82rem;color:var(--muted);margin-top:6px}
+.pie-dlg{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
+footer{border-top:1px solid var(--line);background:var(--panel);font-size:.85rem;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:14px}
+footer nav{display:flex;gap:14px;flex-wrap:wrap}
+.materia{max-width:420px;margin:0 auto 16px;text-align:left}
+.materia label{margin-top:0}
+.sesion{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.sesion #sesionInfo{color:var(--muted);font-size:.9rem}
+.sesion .acciones{display:flex;gap:8px;flex-wrap:wrap}
+.oculto{display:none!important}
+@media (max-width:520px){
+  .brand small{display:none}
+  .resp .letra{font-size:1.9rem}
+  .drop{padding:22px 12px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="./">
+      <img src="assets/icon-192.png" alt="" width="36" height="36">
+      <span><b>QuizLens</b><small data-i18n="tagline">Respuestas a preguntas tipo test</small></span>
+    </a>
+    <button class="btn small" id="bLang" type="button" title="Idioma / Language">EN</button>
+    <button class="btn small" id="bTheme" type="button" data-i18n-title="theme">☀</button>
+    <button class="btn small" id="bAjustes" type="button" data-i18n="settings">Ajustes</button>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="drop" id="drop">
+      <div class="materia">
+        <label for="iMateria" data-i18n="subject_label">Materia (opcional)</label>
+        <input type="text" id="iMateria" maxlength="120" autocomplete="off" data-i18n-ph="subject_ph" placeholder="p. ej. Bases de datos Oracle">
+      </div>
+      <h1 data-i18n="drop_title">Sube o pega la pregunta</h1>
+      <p data-i18n="drop_sub">Arrastra una imagen, pégala con Ctrl+V o haz una foto.</p>
+      <div class="acciones">
+        <button class="btn primary" id="bCamara" type="button" data-i18n="camera">Hacer foto</button>
+        <button class="btn" id="bArchivo" type="button" data-i18n="file">Elegir imagen</button>
+      </div>
+      <input type="file" id="fCamara" accept="image/*" capture="environment" class="oculto">
+      <input type="file" id="fArchivo" accept="image/*" class="oculto">
+      <div class="aviso oculto" id="sinClave">
+        <span data-i18n="no_key">Falta tu clave de Gemini.</span>
+        <button class="btn small" type="button" id="bPonerClave" data-i18n="add_key">Añadir clave</button>
+      </div>
+    </section>
+
+    <section class="card oculto" id="trabajo" aria-live="polite">
+      <div class="estado" id="estado">
+        <div class="spin"></div>
+        <div><b id="paso"></b> <span class="t" id="crono"></span></div>
+        <button class="btn small" type="button" id="bCancelar" style="margin-left:auto" data-i18n="cancel">Cancelar</button>
+      </div>
+      <div id="resultado"></div>
+      <div class="vista" id="vista"></div>
+    </section>
+
+    <section class="sesion" id="sesion">
+      <div><b data-i18n="session">Sesión actual</b> <span id="sesionInfo"></span></div>
+      <div class="acciones">
+        <button class="btn small primary" type="button" id="bPdf" data-i18n="export_pdf">Exportar PDF</button>
+        <button class="btn small" type="button" id="bNueva" data-i18n="new_session">Nueva sesión</button>
+      </div>
+    </section>
+
+    <h2><span data-i18n="history">Historial en este navegador</span>
+      <button class="btn small" type="button" id="bBorrar" data-i18n="clear">Borrar</button></h2>
+    <div class="hist" id="hist"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span data-i18n="privacy">Tu clave y tu historial solo se guardan en este navegador. Las imágenes van directas a Google.</span>
+    <nav>
+      <a href="https://www.unfantasmaenelsistema.com/" target="_blank" rel="noopener">unfantasmaenelsistema.com</a>
+      <a href="https://www.ghostore.unfantasmaenelsistema.com/" target="_blank" rel="noopener">GhoStore</a>
+    </nav>
+  </div>
+</footer>
+
+<dialog id="dlg">
+  <form method="dialog" id="fAjustes">
+    <h3 data-i18n="settings">Ajustes</h3>
+    <label for="iClave" data-i18n="key_label">Clave gratuita de Gemini (o tu única clave)</label>
+    <div class="fila">
+      <input type="password" id="iClave" autocomplete="off" spellcheck="false" placeholder="AIza…">
+      <button class="btn small" type="button" id="bVer" data-i18n="show">Ver</button>
+    </div>
+    <label for="iClavePago" data-i18n="key_paid_label">Clave de pago (opcional)</label>
+    <input type="password" id="iClavePago" autocomplete="off" spellcheck="false" placeholder="AIza…">
+    <p class="nota" data-i18n="key_paid_note">Se usa cuando la gratuita se agota y para el desempate con Gemini Pro.</p>
+    <p class="nota"><span data-i18n="key_note">Se guarda solo en este navegador (localStorage). Créala en</span>
+      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.
+      <span data-i18n="key_tip">Consejo: en Google Cloud restríngela a la API de Gemini y a tu dominio de GitHub Pages.</span></p>
+    <label for="sVotos" data-i18n="votes_label">Comprobaciones en paralelo</label>
+    <select id="sVotos">
+      <option value="1" data-i18n="votes_1">1 · más rápido, sin votación</option>
+      <option value="3" data-i18n="votes_3">3 · recomendado</option>
+      <option value="5" data-i18n="votes_5">5 · máxima seguridad</option>
+    </select>
+    <p class="nota" id="modelosInfo"></p>
+    <p class="nota" id="pruebaClave"></p>
+    <div class="pie-dlg">
+      <span class="fila">
+        <button class="btn small" type="button" id="bProbar" data-i18n="test_key">Comprobar clave</button>
+        <button class="btn small" type="button" id="bOlvidar" data-i18n="forget">Olvidar clave</button>
+      </span>
+      <span class="fila">
+        <button class="btn small" value="cancel" formnovalidate data-i18n="close">Cerrar</button>
+        <button class="btn small primary" id="bGuardar" value="ok" data-i18n="save">Guardar</button>
+      </span>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>
